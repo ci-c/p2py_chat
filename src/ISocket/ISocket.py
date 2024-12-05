@@ -5,8 +5,12 @@ import asyncio
 
 
 class ISocket(ABC):
-    """Abstract base class for remote node providing basic message interface."""
-    def __init__(self, loop: AbstractEventLoop) -> None:  # asyncio.get_event_loop()
+    """
+    Abstract base class for remote node providing basic message interface.
+    """
+    def __init__(self, loop: AbstractEventLoop) -> None:
+        # asyncio.get_event_loop()
+
         self._loop: AbstractEventLoop = loop
         self._socket: socket.socket = socket.socket(
             socket.AF_INET, socket.SOCK_STREAM)
@@ -75,7 +79,8 @@ class IEndpointSocket(ISocket):
 
 class ISocketConnection(IEndpointSocket):
     """Socket connection handler class."""
-    def __init__(self, loop: AbstractEventLoop, socket_: socket.socket) -> None:
+    def __init__(self, loop: AbstractEventLoop,
+                 socket_: socket.socket) -> None:
         # TODO: Potential name shadowing with socket module
         self._loop: AbstractEventLoop = loop
         self._socket = socket_
@@ -87,7 +92,7 @@ class ISocketClient(IEndpointSocket):
                  port: int) -> None:
         super().__init__(loop)
         try:
-            self._socket.connect((server_address, port))
+            self._loop.sock_connect(self._socket, (server_address, port))
         except ConnectionError:
             self._is_connected = False
             self._socket.close()
@@ -105,7 +110,8 @@ class ISocketServer(ISocket):
         """Main server processing loop."""
         try:
             while True:  # TODO: Add graceful shutdown mechanism
-                connection, address = await self._loop.sock_accept(self._socket)
+                connection, address = await self._loop.sock_accept(
+                    self._socket)
                 connection.setblocking(False)
                 print(f"Connection request from {address}")
                 conn = ISocketConnection(self._loop, connection)
